@@ -5,14 +5,17 @@ import * as path from 'path';
 import axios from 'axios';
 import * as download from 'download-file';
 
-import { IBeforeRequest, ICompleted, MetadataResourceType } from '@main/models';
+import { IBeforeRequest, ICompleted, MetadataResourceType, IBeforeSendHeaders } from '@main/models';
 import { FileService, PathService } from '@main/services';
 import { MetadataRepository } from './../repositories/metadata-repository';
 
-export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
-  private _fileService = new FileService();
-  private _pathService = new PathService();
+export class AssetFileInterceptor implements IBeforeSendHeaders, IBeforeRequest, ICompleted {
+  private readonly _fileService = new FileService();
+  private readonly _pathService = new PathService();
   private readonly _metadataRepository = new MetadataRepository();
+  private readonly _context = new Map<number, {
+    requestHeaders: Record<string, string>
+  }>();
 
   private _processing = new Map<number, {
     data: Array<UploadData>,
@@ -39,13 +42,21 @@ export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
     }
   }
 
+  public beforeSendHeaders(
+    details: Electron.OnBeforeSendHeadersListenerDetails, 
+    callback: (beforeSendResponse: Electron.BeforeSendResponse) => void
+  ): void | null {
+    this._context.set(details.id, { requestHeaders: details.requestHeaders });
+    callback({ requestHeaders: details.requestHeaders });
+  }
+
   public completed(details: Electron.OnCompletedListenerDetails) {
     const filePath = this.getFilePath(details.url);
     const absolutePath = this._pathService.getResourcePath(filePath);
     const headers = details.responseHeaders;
+    const context = this._context.get(details.id);
 
     if (_.get(headers, 'Content-Type.0') === 'binary/octet-stream') {
-      console.log(`streaming type: ${details.url}`);
       const directory = path.dirname(absolutePath);
       const filename = path.basename(absolutePath);
 
@@ -56,11 +67,10 @@ export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
               filePath,
               requestUrl: details.url,
               requestMethod: details.method,
-              requestHeaders: details.responseHeaders,
+              requestHeaders: context?.requestHeaders,
               resourceType: MetadataResourceType.Stream,
               responseHeaders: headers,
             });
-            console.log(`downloaded ${filePath}`);
           }
         });
       });
@@ -77,13 +87,13 @@ export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
           filePath,
           requestUrl: details.url,
           requestMethod: details.method,
-          requestHeaders: details.responseHeaders,
+          requestHeaders: context?.requestHeaders,
           resourceType: MetadataResourceType.File,
           responseHeaders: headers,
         });
       });
     }
-    this._processing.delete(details.id);
+    this._context.delete(details.id);
   }
 
   private getFilePath(url: string) {

@@ -5,11 +5,11 @@ import { PassThrough } from 'stream';
 import { PathService } from './services';
 import { MetadataResourceType } from './models';
 
-function createStream (text) {
+function createStream(text) {
   const rv = new PassThrough() // PassThrough is also a Readable stream
   rv.pause();
   rv.push(text)
-  rv.push(null); 
+  rv.push(null);
   return rv;
 }
 
@@ -30,13 +30,15 @@ export function createProtocol() {
 
   protocol.registerStreamProtocol(MetadataResourceType.Stream, (request, callback) => {
     const filePath = getResourcePath(request.url, MetadataResourceType.Stream).replace(/\?.*$/, '');
-    const callbackReader = createStream(fs.readFileSync(filePath));
-    callback({
-      statusCode: 200,
-      data: callbackReader,
-      headers: { 'Content-Type': 'binary/octet-stream' }
-    });
-    callbackReader.resume();
+    fs.readFile(filePath, (file => {
+      const callbackReader = createStream(file);
+      callback({
+        statusCode: 200,
+        data: callbackReader,
+        headers: { 'Content-Type': 'binary/octet-stream' }
+      });
+      callbackReader.resume();
+    }))
   }, (error) => {
     if (error) console.error('Failed to register stream protocol')
   })

@@ -5,21 +5,14 @@ export class StreamInterceptor implements IHeadersReceived {
   private readonly _pathService = new PathService();
   
   public filter: Electron.Filter = {
-    urls: [`${MetadataResourceType.Stream}://*`]
+    urls: [`${MetadataResourceType.Stream}://asset/*`]
   }
-  
   
   public headersReceived(
     details: Electron.OnHeadersReceivedListenerDetails, 
     callback: (headersReceivedResponse: Electron.HeadersReceivedResponse) => void | null
   ): void | null {
-    const filePath = this.getResourcePath(details.url, MetadataResourceType.File).replace(/\?.*$/, '');
-    console.log(details, filePath);
+    const filePath = details.url.substring(MetadataResourceType.Stream.length + 3).replace(/\?.*$/, '');
     callback({});
-  }
-
-  private getResourcePath (url: string, type: MetadataResourceType) {
-    const filePath = url.substring(type.length + 3);
-    return this._pathService.getResourcePath(filePath);
   }
 }

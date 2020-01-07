@@ -8,6 +8,7 @@ import { InterceptorService } from './services/interceptor-service';
 
 import { IframeOptionInterceptor } from './interceptors/iframe-option-interceptor';
 import { AssetFileInterceptor } from './interceptors/asset-file-interceptor';
+import { SaveDataInterceptor } from './interceptors/save-data-interceptor';
 
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
@@ -18,9 +19,10 @@ const installExtensions = async () => {
 };
 
 const interceptorService = new InterceptorService([
-  new IframeOptionInterceptor(),
   new AssetFileInterceptor(),
-  new StreamInterceptor()
+  new SaveDataInterceptor(),
+  new StreamInterceptor(),
+  new IframeOptionInterceptor(),
 ]);
 
 export const createRenderer = (
