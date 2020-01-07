@@ -1,5 +1,5 @@
 
-import * as FileAsync from 'lowdb/adapters/FileAsync';
+import * as FileSync from 'lowdb/adapters/FileSync';
 import * as lowdb from 'lowdb';
 import * as _ from 'lodash';
 
@@ -8,34 +8,36 @@ import { MetadataCollection, MetadataModel } from '@main/models';
 
 export class MetadataRepository {
   private readonly _pathService = new PathService();
-  private readonly _modelAdapter = new FileAsync<MetadataCollection>(this._pathService.getResourcePath('data/metadata.json'));
+  private readonly _modelAdapter = new FileSync<MetadataCollection>(this._pathService.getResourcePath('data/metadata.json'));
 
   public async getCollection(): Promise<MetadataCollection> {
     return (await this.metadataLowdb).value();
   }
 
-  public async getMetadata(filePath: string): Promise<MetadataModel | undefined> {
-    const lowdb = await this.metadataLowdb;
+  public getMetadata(filePath: string): MetadataModel | undefined {
     const searchPath = this.formatFilePath(filePath);
-    const modelDirectory = lowdb.get(searchPath.directory).value() as MetadataCollection;
+    const modelDirectory = this.metadataLowdb.get(searchPath.directory).value() as MetadataCollection;
     const model = modelDirectory && modelDirectory[searchPath.filename] as Array<MetadataModel>;
 
-    if (Array.isArray(model)) {
+    if (model && Array.isArray(model)) {
       return model[0];
     }
   }
 
-  public async saveMetadata(filePath: string, model: MetadataModel) {
-    const lowdb = await this.metadataLowdb;
+  public saveMetadata(filePath: string, model: MetadataModel) {
     const searchPath = this.formatFilePath(filePath);
-    await lowdb.update(searchPath.directory, (value) => ({ ...value, [searchPath.filename]: [model] })).write()
+    this.metadataLowdb.update(
+      searchPath.directory, (value) => ({ 
+        ...value, [searchPath.filename]: [model] 
+      })
+    ).write()
   }
 
   private get metadataLowdb() {
     return lowdb(this._modelAdapter);
   }
 
-  private formatFilePath(filePath: string) {
+  public formatFilePath(filePath: string) {
     const searchPath = filePath.split(/(\/\/*)|(\\)/).filter(path =>
       path && path.indexOf('\/') < 0 && path.indexOf('\\') < 0
     );

@@ -1,3 +1,4 @@
+import { StreamInterceptor } from './interceptors/stream-interceptor';
 
 import { BrowserWindow } from 'electron';
 import * as path from 'path';
@@ -19,6 +20,7 @@ const installExtensions = async () => {
 const interceptorService = new InterceptorService([
   new IframeOptionInterceptor(),
   new AssetFileInterceptor(),
+  new StreamInterceptor()
 ]);
 
 export const createRenderer = (
@@ -34,8 +36,8 @@ export const createRenderer = (
     height: 800,
     webPreferences: {
       nodeIntegration: true,
-      nodeIntegrationInWorker: true,
-      webSecurity: false
+      webSecurity: false,
+      allowRunningInsecureContent: true,
     }
   });
 

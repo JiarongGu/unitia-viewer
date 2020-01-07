@@ -30,13 +30,13 @@ export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
     callback: (response: Electron.Response) => void
   ) {
     const filePath = this.getFilePath(details.url);
-    this._metadataRepository.getMetadata(filePath).then(metadata => {
-      if (metadata) {
-        callback({ cancel: false, redirectURL: `${metadata.resourceType}://${filePath}` });
-      } else {
-        callback({ cancel: false });
-      }
-    });
+    const metadata = this._metadataRepository.getMetadata(filePath);
+    const isSize = details.url.indexOf('SizeInfo.bytes') > 0;
+    if (!isSize && metadata) {
+      callback({ cancel: false, redirectURL: `${metadata.resourceType}://${filePath}` });
+    } else {
+      callback({});
+    }
   }
 
   public completed(details: Electron.OnCompletedListenerDetails) {
@@ -81,8 +81,6 @@ export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
           resourceType: MetadataResourceType.File,
           responseHeaders: headers,
         });
-      }).then(() => {
-        console.log(`saved ${filePath}`);
       });
     }
     this._processing.delete(details.id);

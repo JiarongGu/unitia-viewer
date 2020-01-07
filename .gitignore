@@ -11,6 +11,8 @@
 /release
 /dist
 /resources/asset
+/resources/static
+
 # misc
 .DS_Store
 .env.local
