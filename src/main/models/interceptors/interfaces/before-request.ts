@@ -5,5 +5,5 @@ export interface IBeforeRequest {
   beforeRequest(
     details: OnBeforeRequestListenerDetails,
     callback: (response: ElectronResponse) => void
-  ): Promise<void> | void | null;
+  ): void | null;
 }

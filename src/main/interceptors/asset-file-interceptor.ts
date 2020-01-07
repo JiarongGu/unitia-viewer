@@ -6,7 +6,7 @@ import axios from 'axios';
 import * as download from 'download-file';
 
 import { IBeforeRequest, ICompleted, MetadataResourceType } from '@main/models';
-import { FileService, PathService, FileHelper } from '@main/services';
+import { FileService, PathService } from '@main/services';
 import { MetadataRepository } from './../repositories/metadata-repository';
 
 export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
@@ -25,20 +25,21 @@ export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
     ]
   };
 
-  public async beforeRequest(
+  public beforeRequest(
     details: Electron.OnBeforeRequestListenerDetails,
     callback: (response: Electron.Response) => void
   ) {
     const filePath = this.getFilePath(details.url);
-    const metadata = await this._metadataRepository.getMetadata(filePath);
-    if (metadata) {
-      callback({ cancel: false, redirectURL: `${metadata.resourceType}://${filePath}` });
-    } else {
-      callback({ cancel: false });
-    }
+    this._metadataRepository.getMetadata(filePath).then(metadata => {
+      if (metadata) {
+        callback({ cancel: false, redirectURL: `${metadata.resourceType}://${filePath}` });
+      } else {
+        callback({ cancel: false });
+      }
+    });
   }
 
-  public async completed(details: Electron.OnCompletedListenerDetails) {
+  public completed(details: Electron.OnCompletedListenerDetails) {
     const filePath = this.getFilePath(details.url);
     const absolutePath = this._pathService.getResourcePath(filePath);
     const headers = details.responseHeaders;
@@ -48,38 +49,46 @@ export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
       const directory = path.dirname(absolutePath);
       const filename = path.basename(absolutePath);
 
-      await fs.ensureDir(directory);
-
-      download(details.url, { filename, directory }, async (err) => {
-        if (!err) {
-          await this._metadataRepository.saveMetadata(filePath, {
-            filePath,
-            resourceType: MetadataResourceType.Stream,
-            responseHeaders: headers,
-          });
-          console.log(`downloaded ${filePath}`);
-        }
+      fs.ensureDir(directory).then(() => {
+        download(details.url, { filename, directory }, async (err) => {
+          if (!err) {
+            await this._metadataRepository.saveMetadata(filePath, {
+              filePath,
+              requestUrl: details.url,
+              requestMethod: details.method,
+              requestHeaders: details.responseHeaders,
+              resourceType: MetadataResourceType.Stream,
+              responseHeaders: headers,
+            });
+            console.log(`downloaded ${filePath}`);
+          }
+        });
       });
     } else {
-      const response = await axios.request({
+      axios.request({
         method: details.method as any,
         url: details.url,
         withCredentials: true,
         responseType: 'arraybuffer'
+      }).then(response => {
+        return this._fileService.save(absolutePath, response.data);
+      }).then(() => {
+        return this._metadataRepository.saveMetadata(filePath, {
+          filePath,
+          requestUrl: details.url,
+          requestMethod: details.method,
+          requestHeaders: details.responseHeaders,
+          resourceType: MetadataResourceType.File,
+          responseHeaders: headers,
+        });
+      }).then(() => {
+        console.log(`saved ${filePath}`);
       });
-      
-      await this._fileService.save(absolutePath, response.data);
-      await this._metadataRepository.saveMetadata(filePath, {
-        filePath,
-        resourceType: MetadataResourceType.File,
-        responseHeaders: headers,
-      });
-      console.log(`saved ${filePath}`);
     }
     this._processing.delete(details.id);
   }
 
   private getFilePath(url: string) {
-    return `asset/${new URL(url, 'https://front-r.game-unitia.net/').pathname}`
+    return path.join('asset', new URL(url, 'https://front-r.game-unitia.net/').pathname);
   }
 }

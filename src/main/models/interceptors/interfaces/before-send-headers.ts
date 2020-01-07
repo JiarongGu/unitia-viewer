@@ -5,5 +5,5 @@ export interface IBeforeSendHeaders {
   beforeSendHeaders(
     details: OnBeforeSendHeadersListenerDetails,
     callback: (beforeSendResponse: BeforeSendResponse) => void
-  ): Promise<void> | void | null;
+  ): void | null;
 }

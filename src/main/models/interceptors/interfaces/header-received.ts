@@ -5,5 +5,5 @@ export interface IHeadersReceived {
   headersReceived(
     details: OnHeadersReceivedListenerDetails,
     callback: (headersReceivedResponse: HeadersReceivedResponse) => void | null
-  ): Promise<void> | void | null;
+  ): void | null;
 }
