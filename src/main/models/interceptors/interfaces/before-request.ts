@@ -1,9 +1,10 @@
-import { Filter, OnBeforeRequestListenerDetails, Response as ElectronResponse } from 'electron';
+import { OnBeforeRequestListenerDetails, Response as ElectronResponse } from 'electron';
+import { InterceptorContext } from '../interceptor-context';
 
 export interface IBeforeRequest {
-  filter: Filter | null;
+  filters: Array<string>;
   beforeRequest(
-    details: OnBeforeRequestListenerDetails,
-    callback: (response: ElectronResponse) => void
-  ): void | null;
+    details: OnBeforeRequestListenerDetails, 
+    context: InterceptorContext<ElectronResponse>
+  ): Promise<ElectronResponse | void>;
 }

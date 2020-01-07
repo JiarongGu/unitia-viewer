@@ -1,6 +1,7 @@
-import { Filter, OnCompletedListenerDetails } from 'electron';
+import { OnCompletedListenerDetails } from 'electron';
+import { InterceptorContext } from '../interceptor-context';
 
 export interface ICompleted {
-  filter: Filter | null;
-  completed (details: OnCompletedListenerDetails);
+  filters: Array<string>;
+  completed(details: OnCompletedListenerDetails, context: InterceptorContext<never>) : Promise<void>;
 }

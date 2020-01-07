@@ -1,9 +1,10 @@
-import { Filter, OnHeadersReceivedListenerDetails, HeadersReceivedResponse } from 'electron';
+import { OnHeadersReceivedListenerDetails, HeadersReceivedResponse, BeforeSendResponse } from 'electron';
+import { InterceptorContext } from '../interceptor-context';
 
 export interface IHeadersReceived {
-  filter: Filter | null;
+  filters: Array<string>;
   headersReceived(
-    details: OnHeadersReceivedListenerDetails,
-    callback: (headersReceivedResponse: HeadersReceivedResponse) => void | null
-  ): void | null;
+    details: OnHeadersReceivedListenerDetails, 
+    context: InterceptorContext<BeforeSendResponse>
+  ): Promise<HeadersReceivedResponse | void>;
 }

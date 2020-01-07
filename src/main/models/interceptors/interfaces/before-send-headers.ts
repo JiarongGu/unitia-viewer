@@ -1,9 +1,10 @@
-import { Filter, OnBeforeSendHeadersListenerDetails, BeforeSendResponse } from 'electron';
+import { OnBeforeSendHeadersListenerDetails, BeforeSendResponse } from 'electron';
+import { InterceptorContext } from '../interceptor-context';
 
 export interface IBeforeSendHeaders {
-  filter: Filter | null;
+  filters: Array<string>;
   beforeSendHeaders(
-    details: OnBeforeSendHeadersListenerDetails,
-    callback: (beforeSendResponse: BeforeSendResponse) => void
-  ): void | null;
+    details: OnBeforeSendHeadersListenerDetails, 
+    context: InterceptorContext<BeforeSendResponse>
+  ): Promise<BeforeSendResponse | void>;
 }

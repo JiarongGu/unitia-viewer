@@ -1,5 +1,5 @@
 
-import * as FileSync from 'lowdb/adapters/FileSync';
+import * as FileAsync from 'lowdb/adapters/FileAsync';
 import * as lowdb from 'lowdb';
 import * as _ from 'lodash';
 
@@ -7,16 +7,15 @@ import { PathService } from '../services';
 import { MetadataCollection, MetadataModel } from '@main/models';
 
 export class MetadataRepository {
-  private readonly _pathService = new PathService();
-  private readonly _modelAdapter = new FileSync<MetadataCollection>(this._pathService.getResourcePath('data/metadata.json'));
+  private static readonly _modelAdapter = new FileAsync<MetadataCollection>(new PathService().getResourcePath('data/asset.json'));
 
   public async getCollection(): Promise<MetadataCollection> {
     return (await this.metadataLowdb).value();
   }
 
-  public getMetadata(filePath: string): MetadataModel | undefined {
+  public async getMetadata(filePath: string): Promise<MetadataModel | undefined> {
     const searchPath = this.formatFilePath(filePath);
-    const modelDirectory = this.metadataLowdb.get(searchPath.directory).value() as MetadataCollection;
+    const modelDirectory = (await this.metadataLowdb).get(searchPath.directory).value() as MetadataCollection;
     const model = modelDirectory && modelDirectory[searchPath.filename] as Array<MetadataModel>;
 
     if (model && Array.isArray(model)) {
@@ -24,17 +23,17 @@ export class MetadataRepository {
     }
   }
 
-  public saveMetadata(filePath: string, model: MetadataModel) {
+  public async saveMetadata(filePath: string, model: MetadataModel) {
     const searchPath = this.formatFilePath(filePath);
-    this.metadataLowdb.update(
-      searchPath.directory, (value) => ({ 
-        ...value, [searchPath.filename]: [model] 
+    await (await this.metadataLowdb).update(
+      searchPath.directory, (value) => ({
+        ...value, [searchPath.filename]: [model]
       })
     ).write()
   }
 
   private get metadataLowdb() {
-    return lowdb(this._modelAdapter);
+    return lowdb(MetadataRepository._modelAdapter);
   }
 
   public formatFilePath(filePath: string) {

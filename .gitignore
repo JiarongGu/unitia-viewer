@@ -11,7 +11,8 @@
 /release
 /dist
 /resources/asset
-/resources/static
+/resources/data
+/resources/save
 
 # misc
 .DS_Store

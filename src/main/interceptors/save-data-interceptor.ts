@@ -1,50 +1,36 @@
+import { MetadataRepository } from './../repositories/metadata-repository';
 import * as path from 'path';
 import axios from 'axios';
 import * as _ from 'lodash';
 
-import { ICompleted, MetadataResourceType, IBeforeSendHeaders } from '@main/models';
+import { ICompleted, MetadataResourceType, IBeforeRequest, InterceptorContext } from '@main/models';
 import { FileService, PathService } from '@main/services';
 import { SaveDataRepository } from '@main/repositories/savedata-repository';
 
-export class SaveDataInterceptor implements IBeforeSendHeaders, ICompleted {
+export class SaveDataInterceptor implements IBeforeRequest, ICompleted {
   private readonly _fileService = new FileService();
   private readonly _pathService = new PathService();
-  private readonly _metadataRepository = new SaveDataRepository();
-  private readonly _context = new Map<number, {
-    requestHeaders: Record<string, string>
-  }>();
+  private readonly _metadataRepository: SaveDataRepository;
 
-  public filter: Electron.Filter = {
-    urls: ['https://r.game-unitia.net/v1/*']
+  constructor() {
+    this._metadataRepository = new SaveDataRepository();
   }
 
-  public beforeRequest(
-    details: Electron.OnBeforeRequestListenerDetails,
-    callback: (response: Electron.Response) => void
-  ) {
+  public filters = ['https://r.game-unitia.net/v1/*'];
+
+  public async beforeRequest(details: Electron.OnBeforeRequestListenerDetails) {
     const filePath = this.getFilePath(details.url);
     const metadata = this._metadataRepository.getMetadata(filePath);
 
     if (metadata) {
-      callback({ cancel: false, redirectURL: `${MetadataResourceType.File}://${filePath}` });
-    } else {
-      callback({});
+      return { cancel: false, redirectURL: `${MetadataResourceType.File}://${filePath}` }
     }
   }
 
-  beforeSendHeaders(
-    details: Electron.OnBeforeSendHeadersListenerDetails, 
-    callback: (beforeSendResponse: Electron.BeforeSendResponse) => void
-  ): void | null {
-    this._context.set(details.id, { requestHeaders: details.requestHeaders });
-    callback({ requestHeaders: details.requestHeaders });
-  }
-
-  completed(details: Electron.OnCompletedListenerDetails) {
+  public async completed(details: Electron.OnCompletedListenerDetails, context: InterceptorContext) {
     const filePath = this.getFilePath(details.url);
     const absolutePath = this._pathService.getResourcePath(filePath);
-    const context = this._context.get(details.id);
-
+    
     axios.request({
       headers: context?.requestHeaders,
       method: details.method as any,
@@ -63,8 +49,6 @@ export class SaveDataInterceptor implements IBeforeSendHeaders, ICompleted {
     }).catch(error => {
       console.log(details.url);
     });
-
-    this._context.delete(details.id);
   }
 
   private getFilePath(url: string) {
