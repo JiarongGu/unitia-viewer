@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 import * as path from 'path';
 
 import { reduceMapAsync } from '@shared/utils';
@@ -51,6 +51,11 @@ export class FileHelper {
 
   public static getFileName(filePath: string) {
     return path.basename(filePath);
+  }
+
+  public static ensureDir(filePath: string) {
+    const dirPath = path.dirname(filePath);
+    return fs.ensureDir(dirPath);
   }
 
   public static async readDirectoryDeep(filePath: string): Promise<FileStatsCollection> {

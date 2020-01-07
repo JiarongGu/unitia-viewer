@@ -1,8 +1,19 @@
 import { BrowserWindow } from 'electron';
+import * as _ from 'lodash';
 
-import { Interceptor, InterceptorType } from '@main/models';
+import { Interceptor, InterceptorEvent } from '@main/models';
 
 export class InterceptorService {
+  private static interceptorEventHandler = {
+    [InterceptorEvent.onBeforeSendHeaders]: 'beforeSendHeaders',
+    [InterceptorEvent.onBeforeRequest]: 'beforeRequest',
+    [InterceptorEvent.onSendHeaders]: 'sendHeaders',
+    [InterceptorEvent.onHeadersReceived]: 'headersReceived',
+    [InterceptorEvent.onResponseStarted]: 'responseStarted',
+    [InterceptorEvent.onBeforeRedirect]: 'beforeRedirect',
+    [InterceptorEvent.onCompleted]: 'completed',
+  };
+
   private interceptors: Array<Interceptor>;
 
   constructor(interceptors: Array<Interceptor>) {
@@ -11,32 +22,22 @@ export class InterceptorService {
 
   public apply(win: BrowserWindow) {
     this.interceptors.forEach(interceptor => {
-
-      if (interceptor.type === InterceptorType.HeaderReceived) {
-        if (interceptor.filter != null) {
-          win.webContents.session.webRequest.onHeadersReceived(interceptor.filter, interceptor.listener);
-        } else {
-          win.webContents.session.webRequest.onHeadersReceived(interceptor.listener);
-        }
-      }
-
-      if (interceptor.type === InterceptorType.BeforeRequest) {
-        if (interceptor.filter != null) {
-          win.webContents.session.webRequest.onBeforeRequest(interceptor.filter, interceptor.listener);
-        } else {
-          win.webContents.session.webRequest.onBeforeRequest(interceptor.listener);
-        }
-      }
-
-      if (interceptor.type === InterceptorType.Completed) {
-        if (interceptor.filter != null) {
-          win.webContents.session.webRequest.onCompleted(interceptor.filter, interceptor.listener);
-        } else {
-          win.webContents.session.webRequest.onCompleted(interceptor.listener);
-        }
-      }
+      const events = _.values(InterceptorEvent);
+      
+      events.forEach(event => {
+        this.applyInterceptor(event, win, interceptor);
+      });
     });
   }
 
-  
+  private applyInterceptor(event: InterceptorEvent, win: BrowserWindow, interceptor: Interceptor) {
+    const handler = interceptor[InterceptorService.interceptorEventHandler[event]]
+    if (handler && typeof(win.webContents.session.webRequest[event]) === 'function') {
+      if (interceptor.filter != null) {
+        (win.webContents.session.webRequest[event] as any)(interceptor.filter, handler.bind(interceptor));
+      } else {
+        (win.webContents.session.webRequest[event] as any)(handler.bind(interceptor));
+      }
+    }
+  }
 }

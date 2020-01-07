@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 
 import { createRenderer } from './create-renderer';
+import { createProtocol } from './create-protocol';
 
 let renderer: BrowserWindow | null;
 
@@ -11,6 +12,7 @@ const createWindow = createRenderer(
 
 app.on('ready', () => {
   app.commandLine.appendSwitch('disable-site-isolation-trials');
+  createProtocol();
   createWindow()
 });
 

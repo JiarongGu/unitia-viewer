@@ -1,6 +1,4 @@
-export * from './before-request-interceptor';
-export * from './header-received-interceptor';
-export * from './completed-interceptor';
-
+export * from './interfaces';
 export * from './interceptor';
-export * from './interceptor-type.enum';
+
+export * from './interceptor-event.enum';

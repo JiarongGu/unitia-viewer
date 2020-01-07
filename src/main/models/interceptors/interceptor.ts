@@ -1,8 +1,9 @@
-import { BeforeRequestInterceptor } from './before-request-interceptor';
-import { HeadersReceivedInterceptor } from './header-received-interceptor';
-import { CompletedInterceptor } from './completed-interceptor';
+import { IHeadersReceived, IBeforeRequest, ICompleted, IBeforeSendHeaders } from './interfaces';
+
+
 
 export type Interceptor =
-  HeadersReceivedInterceptor |
-  BeforeRequestInterceptor |
-  CompletedInterceptor;
+  Partial<IHeadersReceived> &
+  Partial<IBeforeRequest> &
+  Partial<ICompleted> &
+  Partial<IBeforeSendHeaders>;
