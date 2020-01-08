@@ -18,6 +18,10 @@ protocol.registerSchemesAsPrivileged([{
 },{
   scheme: MetadataResourceType.Stream,
   privileges: { secure: true, standard: true, supportFetchAPI: true }
+},
+{
+  scheme: MetadataResourceType.Mock,
+  privileges: { secure: true, standard: true, supportFetchAPI: true }
 }]);
 
 app.on('ready', () => {

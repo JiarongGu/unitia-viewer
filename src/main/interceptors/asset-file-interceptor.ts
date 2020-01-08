@@ -12,11 +12,7 @@ export class AssetFileInterceptor implements IBeforeRequest, ICompleted {
   private readonly _fileService = new FileService();
   private readonly _pathService = new PathService();
   private readonly _metadataRepository = new MetadataRepository();
-  public filters;
-
-  constructor(filters: Array<string>) {
-    this.filters = filters;
-  }
+  public filters = ['https://front-r.game-unitia.net/*', 'http://front-r.game-unitia.net/*'];
 
   public async beforeRequest(
     details: Electron.OnBeforeRequestListenerDetails

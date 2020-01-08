@@ -1,4 +1,3 @@
-import { MetadataRepository } from './../repositories/metadata-repository';
 import * as path from 'path';
 import axios from 'axios';
 import * as _ from 'lodash';
@@ -47,7 +46,7 @@ export class SaveDataInterceptor implements IBeforeRequest, ICompleted {
         resourceType: MetadataResourceType.File,
       });
     }).catch(error => {
-      console.log(details.url);
+      console.log('save error:: ', details.url);
     });
   }
 

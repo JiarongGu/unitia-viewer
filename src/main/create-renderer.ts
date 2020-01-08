@@ -10,6 +10,8 @@ import { IframeOptionInterceptor } from './interceptors/iframe-option-intercepto
 import { AssetFileInterceptor } from './interceptors/asset-file-interceptor';
 import { SaveDataInterceptor } from './interceptors/save-data-interceptor';
 import { ResourceFileInterceptor } from './interceptors/resource-file-interceptor';
+import { SmBeatInterceptor } from './interceptors/smbeat-interceptor';
+import { OsApiFrameInterceptor } from './interceptors/osapi-frame-interceptor';
 
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
@@ -20,12 +22,12 @@ const installExtensions = async () => {
 };
 
 const interceptorService = new InterceptorService([
-  new AssetFileInterceptor([
-    'https://front-r.game-unitia.net/*',
-  ]),
+  new AssetFileInterceptor(),
   new SaveDataInterceptor(),
   new StreamInterceptor(),
   new ResourceFileInterceptor(),
+  new SmBeatInterceptor(),
+  // new OsApiFrameInterceptor(),
   new IframeOptionInterceptor(),
 ]);
 
